@@ -123,11 +123,31 @@ export class AppScreen extends Component {
     const { app, context, feedProps } = this.props;
     const reg = AppRegistry.instance;
 
-    let location = reg.getLocation(app, context, feedProps);
+    let location;
+    const feedItem = window.feedItem;
+
+    //allow feeds
+    if (feedItem) {
+      const appLike = {
+        type: feedItem.type,
+        props: feedItem.props,
+        title: feedItem.title,
+        longTitle: feedItem.title,
+      };
+      location = reg.getLocation(appLike, context, feedItem.props);
+
+      // Strip props param
+      const url = new URL(location, window.location.origin);
+      url.searchParams.delete("props");
+      location = url.toString();
+    } else {
+      location = reg.getLocation(app, context, feedProps);
+    }
+
     if (!isDev() && context && context === AppProps.RV_CONTEXT_EDITOR) {
       location = "../../" + location;
     }
-
+    
     let appDiv = this.getAppDiv();
     if (!appDiv) {
       appDiv = document.createElement("div");

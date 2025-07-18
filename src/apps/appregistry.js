@@ -105,7 +105,6 @@ class AppRegistry {
 
   getLocation(app, context, feedProps, otherProps) {
     const { RP_CONTEXT, RP_DEBUG, RP_PROPS } = AppProps;
-    const { props } = app;
     const { APP_TYPES } = this;
 
     const appType = APP_TYPES[app.type];
@@ -120,12 +119,16 @@ class AppRegistry {
       outProps = {...outProps, ...otherProps};
     }
 
-    if (props !== undefined) {
-      Object.assign(outProps, props);
-    }
-
-    if (appType.addProps && feedProps) {
-      appType.addProps(feedProps, outProps);
+    //feed logic
+    if (props) {
+      if (appType.addProps) {
+        console.log("using feed for location");
+        appType.addProps(props, outProps);
+      } else {
+        Object.assign(outProps, props);
+      }
+    } else if (app?.props) {
+      Object.assign(outProps, app.props);
     }
 
     let loc = UrlUtil.addParam(
