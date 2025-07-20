@@ -1,5 +1,6 @@
 import { enableExperimentalApps, APP_TYPES } from './applist.js';
 import { AppProps } from '../app/props.js';
+import { LaunchParamParser } from './extractAppProps';
 import {
   blobToStr,
   md5,
@@ -103,56 +104,39 @@ class AppRegistry {
     return appType.alias;
   }
 
-  getLocation(app, context, feedProps, otherProps) {
+  getLocation(app, context, launchProps, otherProps) {
     const { RP_CONTEXT, RP_DEBUG, RP_PROPS } = AppProps;
     const { APP_TYPES } = this;
 
-    const appType = APP_TYPES[app.type];
+    // Use provided props or extract from current URL
+    const parsedProps = launchProps || LaunchParamParser.extractAppProps() || {};
+    const appType = APP_TYPES[parsedProps.type || app?.type];
+
     let outProps = {
-      type: appType.type,
-      title: this.getLongTitle(app),
+      type: parsedProps.type || appType?.type,
+      title: parsedProps.title || this.getLongTitle(app),
       mt: appType?.multiThreaded,
-      app: this.getName(app)
+      app: this.getName(app),
+      ...parsedProps,
+      ...otherProps,
     };
 
-    if (otherProps) {
-      outProps = {...outProps, ...otherProps};
-    }
-
-    //feed logic
-    if (props) {
-      if (appType.addProps) {
-        console.log("using feed for location");
-        appType.addProps(props, outProps);
-      } else {
-        Object.assign(outProps, props);
-      }
-    } else if (app?.props) {
-      Object.assign(outProps, app.props);
-    }
-
     let loc = UrlUtil.addParam(
-      appType.location, RP_PROPS, AppProps.encode(outProps));
+      appType.location, RP_PROPS, AppProps.encode(outProps)
+    );
 
-    const debug = UrlUtil.getBoolParam(
-      window.location.search, RP_DEBUG);
-    if (debug) {
-      loc = UrlUtil.addParam(loc, RP_DEBUG, 'true');
-    }
-    if (context) {
-      loc = UrlUtil.addParam(loc, RP_CONTEXT, context);
-    }
+    const debug = UrlUtil.getBoolParam(window.location.search, RP_DEBUG);
+    if (debug) loc = UrlUtil.addParam(loc, RP_DEBUG, 'true');
+
+    if (context) loc = UrlUtil.addParam(loc, RP_CONTEXT, context);
+
     if (appType.addParams) {
       loc = appType.addParams(loc);
     }
 
     return loc;
   }
-
-  getTitle(app) {
-    return app.title;
-  }
-
+  
   isMultiThreaded(type) {
     const APP_TYPES = this.APP_TYPES;
     const t = APP_TYPES[type];

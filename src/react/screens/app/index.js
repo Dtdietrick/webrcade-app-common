@@ -3,8 +3,8 @@ import React, { Component } from "react";
 import * as LOG from '../../../log';
 import { AppProps } from '../../../app';
 import { AppRegistry } from '../../../apps';
+import { LaunchParamParser } from '../../../apps';
 import { isDev } from '../../../util';
-
 import styles from './style.scss'
 
 export const APP_DIV_ID = "webrcade-app";
@@ -120,34 +120,35 @@ export class AppScreen extends Component {
   }
 
   render() {
-    const { app, context, feedProps } = this.props;
+    const { app, context } = this.props;
     const reg = AppRegistry.instance;
 
     let location;
-    const feedItem = window.feedItem;
+    const parsedProps = LaunchParamParser.extractAppProps();
 
-    //allow feeds
-    if (feedItem) {
+    if (parsedProps) {
       const appLike = {
-        type: feedItem.type,
-        props: feedItem.props,
-        title: feedItem.title,
-        longTitle: feedItem.title,
+        type: parsedProps.type,
+        props: parsedProps,
+        title: parsedProps.title,
+        longTitle: parsedProps.title,
       };
-      location = reg.getLocation(appLike, context, feedItem.props);
 
-      // Strip props param
+      location = reg.getLocation(appLike, context, parsedProps);
+
+      // Remove redundant params
       const url = new URL(location, window.location.origin);
       url.searchParams.delete("props");
+      url.searchParams.delete("feed");
       location = url.toString();
     } else {
-      location = reg.getLocation(app, context, feedProps);
+      location = reg.getLocation(app, context);
     }
 
-    if (!isDev() && context && context === AppProps.RV_CONTEXT_EDITOR) {
+    if (!isDev() && context === AppProps.RV_CONTEXT_EDITOR) {
       location = "../../" + location;
     }
-    
+
     let appDiv = this.getAppDiv();
     if (!appDiv) {
       appDiv = document.createElement("div");
@@ -188,4 +189,4 @@ export class AppScreen extends Component {
 
     return (<div></div>);
   }
-};
+}  

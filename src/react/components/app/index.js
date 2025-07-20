@@ -89,15 +89,16 @@ export class WebrcadeApp extends Component {
       this.setState({ showXboxViewMessage: show })
     });
 
-    // Avoid the white flash
-    if (!isDev()) {
-      try {
-        window.frameElement.style.display = 'block';
-      } catch (e) {
-        LOG.info('error attempting to make application visible: ' + e)
-      }
+    // Avoid the white flash (safely for both iframe and standalone)
+    console.log("🔍 frameElement", window.frameElement);
+    console.log("🧭 window.top === window:", window.top === window);
+    
+    try {
+      (window.frameElement || document.body).style.display = 'block';
+    } catch (e) {
+      LOG.info("error un-hiding display:", e);
     }
-
+    
     const url = window.location.search;
     LOG.info(url);
 
